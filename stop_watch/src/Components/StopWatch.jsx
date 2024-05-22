@@ -1,74 +1,51 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./style/style.css";
 import { FaPause, FaPlay } from "react-icons/fa";
 import { GrPowerReset } from "react-icons/gr";
 
 function StopWatch() {
-  const [hour, setHour] = useState(0);
-  const [minute, setMinute] = useState(0);
-  const [second, setSecond] = useState(0);
-  const [msecond, setMsecond] = useState(0);
-  const [count, setCount] = useState(false);
+  const [time, setTime] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
-    let intervalId;
-    if (count) {
-      intervalId = setInterval(() => {
-        setMsecond((prevMsecond) => {
-          if (prevMsecond < 999) {
-            return prevMsecond + 10;
-          } else {
-            setSecond((prevSecond) => {
-              if (prevSecond < 59) {
-                return prevSecond + 1;
-              } else {
-                setMinute((prevMinute) => {
-                  if (prevMinute < 59) {
-                    return prevMinute + 1;
-                  } else {
-                    setHour((prevHour) => prevHour + 1);
-                    return 0;
-                  }
-                });
-                return 0;
-              }
-            });
-            return 0;
-          }
-        });
+    if (isRunning) {
+      intervalRef.current = setInterval(() => {
+        setTime((prevTime) => prevTime + 10);
       }, 10);
     } else {
-      clearInterval(intervalId);
+      clearInterval(intervalRef.current);
     }
-    return () => clearInterval(intervalId);
-  }, [count]);
+    return () => clearInterval(intervalRef.current);
+  }, [isRunning]);
 
-  const start = () => {
-    setCount((prevCount) => !prevCount);
+  const startStop = () => {
+    setIsRunning((prevIsRunning) => !prevIsRunning);
   };
 
   const reset = () => {
-    setCount(false);
-    setHour(0);
-    setMinute(0);
-    setSecond(0);
-    setMsecond(0);
+    clearInterval(intervalRef.current);
+    setIsRunning(false);
+    setTime(0);
+  };
+
+  const formatTime = (time) => {
+    const hours = Math.floor(time / 3600000).toString().padStart(2, '0');
+    const minutes = Math.floor((time % 3600000) / 60000).toString().padStart(2, '0');
+    const seconds = Math.floor((time % 60000) / 1000).toString().padStart(2, '0');
+    const milliseconds = Math.floor((time % 1000) / 10).toString().padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}:${milliseconds}`;
   };
 
   return (
     <div className="container">
       <div className="title">Stop Watch</div>
-      <div className={count ? "time-container-counting" : "time-container"}>
-        <span className="hour">{hour < 10 ? `0${hour}` : hour}</span> :{" "}
-        <span className="minute">{minute < 10 ? `0${minute}` : minute}</span> :{" "}
-        <span className="second">{second < 10 ? `0${second}` : second}</span> :{" "}
-        <span className="msecond">
-          {msecond < 100 ? `0${msecond}` : msecond}
-        </span>
+      <div className={isRunning ? "time-container-counting" : "time-container"}>
+        <span className="time">{formatTime(time)}</span>
       </div>
       <div className="buttons">
-        <button className="play" onClick={start}>
-          {count ? <FaPause /> : <FaPlay />}
+        <button className="play" onClick={startStop}>
+          {isRunning ? <FaPause /> : <FaPlay />}
         </button>
         <button onClick={reset}>
           <GrPowerReset />
